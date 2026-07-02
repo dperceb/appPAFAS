@@ -605,7 +605,11 @@ function renderEstadistica() {
   const origen = document.getElementById('est-origen').value;
   const fechaSelect = document.getElementById('est-fecha');
   const fechasDisponibles = [...new Set(state.historico.map(r => r.fecha))].sort();
+  const fechaSeleccionada = fechaSelect.value;
   fillSelect(fechaSelect, fechasDisponibles.map(formatFechaCorta));
+  if (fechaSeleccionada && Array.from(fechaSelect.options).some(o => o.value === fechaSeleccionada)) {
+    fechaSelect.value = fechaSeleccionada;
+  }
   fechaSelect.disabled = origen !== 'historico';
 
   let registros;

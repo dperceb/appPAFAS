@@ -104,7 +104,7 @@ const Scoring = (() => {
       const valores = [n, p, r, t].filter(v => esNumero(v));
       if (valores.length === 0) return 'NO';
       const ok = [n, p, r, t].every(v => !esNumero(v) || v >= 20);
-      return ok ? 'APTO' : 'NO';
+      return ok ? 'SÍ' : 'NO';
     }
 
     if (edad !== null && edad > 44) {
