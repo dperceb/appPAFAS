@@ -73,10 +73,11 @@
         <li>Consulte <strong>Estadística</strong> para ver el resumen de aptos/no aptos por empleo y sexo.</li>
       </ol>
       <p class="muted">Nota: al ser una aplicación 100% local, los informes en PDF se generan en el propio navegador
-      (sin conexión a ningún servidor). La elección de carpeta de destino requiere abrir la aplicación desde un
-      servidor local (no funciona con doble clic sobre <code>index.html</code>); si el navegador no la soporta, los
-      PDF se descargan igualmente con el mismo nombre a la carpeta de Descargas. El ACTA se sigue imprimiendo con la
-      función "Imprimir" del navegador (Guardar como PDF).</p>
+      (sin conexión a ningún servidor). La elección de carpeta de destino requiere un navegador Chromium (Chrome,
+      Edge) servido por HTTP/HTTPS, y puede estar bloqueada por las políticas de equipos institucionales gestionados;
+      en ese caso, al generar varios informes a la vez se descarga automáticamente un único archivo ZIP con todos los
+      PDF, y al generar uno solo se descarga directamente. El ACTA se sigue imprimiendo con la función "Imprimir" del
+      navegador (Guardar como PDF).</p>
     </div>
   </section>
 
@@ -145,7 +146,8 @@
       <h3>Carpeta de informes</h3>
       <p>Recuerde una carpeta para guardar en ella los PDF de los informes (individual y en lote) sin tener que
       elegirla cada vez. Requiere un navegador basado en Chromium servido por HTTP/HTTPS; si su navegador o las
-      políticas del equipo no lo permiten, los informes se descargarán individualmente a la carpeta de Descargas.</p>
+      políticas del equipo no lo permiten, los informes en lote se descargarán empaquetados en un único ZIP
+      (y el informe individual, directamente) a la carpeta de Descargas del navegador.</p>
       <p id="carpeta-informes-estado" class="muted">Comprobando disponibilidad…</p>
       <div class="actions">
         <button class="btn" id="btn-carpeta-elegir">Elegir carpeta</button>
@@ -275,8 +277,10 @@
   <section id="tab-lote" class="tab-panel">
     <div class="card">
       <h2>Informes en lote</h2>
-      <p>Seleccione los participantes para los que desea generar el informe. Se le pedirá una carpeta y se guardará
-      en ella un archivo PDF por participante, con el nombre <code>AAMMDD PAFAS Empleo Apellidos y nombre.pdf</code>.</p>
+      <p>Seleccione los participantes para los que desea generar el informe. Si el navegador lo permite, se le
+      pedirá una carpeta y se guardará en ella un archivo PDF por participante, con el nombre
+      <code>AAMMDD PAFAS Empleo Apellidos y nombre.pdf</code>. Si no, se descargará automáticamente un único ZIP
+      con todos los PDF dentro.</p>
       <div class="actions">
         <button class="btn" id="btn-lote-all">Seleccionar todos</button>
         <button class="btn" id="btn-lote-none">Deseleccionar todos</button>
@@ -326,6 +330,7 @@
 <div id="print-root"></div>
 
 <script src="assets/js/vendor/html2pdf.bundle.min.js"></script>
+<script src="assets/js/vendor/jszip.min.js"></script>
 <script src="assets/js/data.js"></script>
 <script src="assets/js/scoring.js"></script>
 <script src="assets/js/store.js"></script>

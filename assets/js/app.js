@@ -137,7 +137,7 @@ async function initCarpetaInformes() {
   async function refrescar() {
     const info = await PdfExport.infoCarpetaRecordada();
     if (!info.soportado) {
-      estado.textContent = 'Su navegador (o las políticas de este equipo) no permiten elegir carpeta: los informes se descargarán individualmente a la carpeta de Descargas.';
+      estado.textContent = 'Su navegador (o las políticas de este equipo) no permiten elegir carpeta: los informes en lote se descargarán empaquetados en un ZIP, y el individual directamente.';
       btnElegir.disabled = true;
       btnOlvidar.hidden = true;
     } else if (info.nombre) {
@@ -553,13 +553,17 @@ async function generarInformesPdfConUI(btn, items) {
   const textoOriginal = btn.textContent;
   btn.disabled = true;
   try {
-    const resultado = await PdfExport.generarInformes(items, state.acta.fecha, (actual, total) => {
+    const resultado = await PdfExport.generarInformes(items, state.acta.fecha, (actual, total, row, fase) => {
+      if (fase === 'zip') { btn.textContent = 'Empaquetando ZIP…'; return; }
       btn.textContent = total > 1 ? `Generando ${actual}/${total}…` : 'Generando…';
     });
     if (!resultado) return; // el usuario canceló la selección de carpeta
-    const destino = resultado.carpeta ? 'en la carpeta seleccionada' : 'en la carpeta de Descargas';
     const errores = resultado.fail ? ` (${resultado.fail} con error, revise la consola)` : '';
-    alert(`${resultado.ok} de ${items.length} informe(s) guardados ${destino}${errores}.`);
+    let destino;
+    if (resultado.modo === 'carpeta') destino = 'en la carpeta seleccionada';
+    else if (resultado.modo === 'zip') destino = 'empaquetados en un único archivo ZIP (el navegador no permite elegir carpeta)';
+    else destino = 'descargados directamente (el navegador no permite elegir carpeta)';
+    alert(`${resultado.ok} de ${items.length} informe(s) ${destino}${errores}.`);
   } catch (e) {
     console.error(e);
     alert('No se pudo generar el PDF: ' + e.message);
