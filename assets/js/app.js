@@ -578,8 +578,15 @@ function construirInformeHtml(row) {
 
   return `
     <div class="hoja informe-print">
-      <p style="text-align:right"><b>EJÉRCITO DEL AIRE Y DEL ESPACIO</b><br>
-      ${escapeHtml(cfg.juntaZonal)}<br>${escapeHtml(cfg.unidad)}<br>Tribunal de evaluación de pruebas físicas</p>
+      <div class="membrete">
+        <img src="assets/img/logo-ministerio.png" alt="Ministerio de Defensa" class="membrete-logo" onerror="this.remove()">
+        <div class="membrete-caja">
+          <b>EJÉRCITO DEL AIRE Y DEL ESPACIO</b>
+          <span>${escapeHtml(cfg.juntaZonal)}</span>
+          <span>${escapeHtml(cfg.unidad)}</span>
+          <span>Tribunal de evaluación de pruebas físicas</span>
+        </div>
+      </div>
       <h2>INFORME DE CONDICIONES FÍSICAS</h2>
       <div class="campo"><b>D./Dª.:</b> ${escapeHtml(row.nombre)}</div>
       <div class="campo"><b>DNI/TMI:</b> ${escapeHtml(row.dni)}</div>
@@ -587,7 +594,7 @@ function construirInformeHtml(row) {
       <div class="campo"><b>FECHA DE NACIMIENTO:</b> ${formatFechaCorta(row.fechaNacimiento)}</div>
       <div class="campo"><b>DESTINO:</b> ${escapeHtml(row.destino)}</div>
       <div class="campo"><b>MOTIVO DE LAS PRUEBAS (PERIÓDICO/EXTRAORDINARIO):</b> ${escapeHtml(calc.motivoPruebas)}</div>
-      <div class="campo"><b>RECONOCIMIENTO MÉDICO (APTO/ NO APTO):</b> ${escapeHtml(row.recMedico)}</div>
+      <div class="campo-caja"><span>RECONOCIMIENTO MÉDICO (APTO/ NO APTO):</span><b class="caja">${escapeHtml(row.recMedico)}</b></div>
       <table>
         <thead><tr><th>PRUEBA</th><th>MARCA</th><th>PUNTOS</th></tr></thead>
         <tbody>
@@ -597,23 +604,25 @@ function construirInformeHtml(row) {
           <tr><td>RESISTENCIA 2.000 m (minutos)</td><td>${escapeHtml(row.resMarca)}</td><td>${calc.t}</td></tr>
         </tbody>
       </table>
-      <div class="campo"><b>TOTAL PUNTOS:</b> ${calc.total}</div>
-      <div class="campo"><b>SUPERADO (SI/NO):</b> ${calc.apto}</div>
-      <div class="campo"><b>NO SUPERADO (MOTIVO):</b> ${escapeHtml(motivoNoSuperado)}</div>
-      <div class="campo"><b>FECHA PARA LA PRÓXIMA EVALUACIÓN (AÑO):</b> ${proximaEval}</div>
-      <p style="margin-top:2rem">En ${escapeHtml(cfg.localidad)}, a ${formatFechaEs(state.acta.fecha)}</p>
+      <div class="total-puntos"><span>TOTAL PUNTOS</span><b>${calc.total}</b></div>
+      <div class="campo-caja"><span>SUPERADO (SI/NO):</span><b class="caja">${calc.apto}</b></div>
+      <div class="campo-caja"><span>NO SUPERADO (MOTIVO):</span><b class="caja">${escapeHtml(motivoNoSuperado)}</b></div>
+      <div class="campo-caja"><span>FECHA PARA LA PRÓXIMA EVALUACIÓN (AÑO):</span><b class="caja">${proximaEval}</b></div>
+      <p class="informe-fecha">En ${escapeHtml(cfg.localidad)}, a ${formatFechaEs(state.acta.fecha)}</p>
       <div class="firma">
         <p>${escapeHtml(cfg.tituladoArticulo)} ${escapeHtml(cfg.tituladoEmpleo)}<br>
-        Oficial titulado en Educación Física y Deportes<br><br><br>
-        ${escapeHtml(cfg.tituladoNombre)}</p>
+        oficial titulado en Educación Física y Deportes</p>
+        <div class="firma-espacio"></div>
+        <p class="firma-nombre">${escapeHtml(cfg.tituladoNombre)}</p>
       </div>
-      <p>Vº Bº,</p>
+      <p class="vobo">Vº Bº,</p>
       <div class="firma">
         <p>${escapeHtml(cfg.jefeArticulo)} ${escapeHtml(cfg.jefeEmpleo)}<br>
-        Presidente del tribunal de evaluación de pruebas físicas<br><br><br>
-        ${escapeHtml(cfg.jefeNombre)}</p>
+        Presidente del tribunal de evaluación de pruebas físicas</p>
+        <div class="firma-espacio"></div>
+        <p class="firma-nombre">${escapeHtml(cfg.jefeNombre)}</p>
       </div>
-      <p><b>DESTINATARIOS:</b><br>Jefe de la UCO<br>Interesado</p>
+      <p class="destinatarios"><b>DESTINATARIOS:</b><br>Jefe de la UCO<br>Interesado</p>
     </div>`;
 }
 

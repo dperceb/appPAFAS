@@ -20,19 +20,10 @@
   .acta-print .row-final-fail { background: #f6cfc9; }
   .acta-print .row-final-incomplete { background: #fdecb0; }
 
-  .informe-print { font-size: 11pt; }
-  .informe-print h1 { text-align: center; font-size: 10pt; }
-  .informe-print h2 { text-align: center; font-size: 13pt; margin-top: 1.5rem; }
-  .informe-print table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-  .informe-print th, .informe-print td { border: 1px solid #333; padding: 5px; }
-  .informe-print .campo { margin: 0.3rem 0; }
-  .informe-print .campo b { display: inline-block; min-width: 260px; }
-  .informe-print .firma { margin-top: 3rem; text-align: center; }
-
   .convocatoria-print table { width: 100%; border-collapse: collapse; }
   .convocatoria-print th, .convocatoria-print td { border: 1px solid #333; padding: 4px; text-align: center; }
 
   @page { size: A4 landscape; margin: 10mm; }
   @page informe { size: A4 portrait; margin: 15mm; }
-  .informe-print, .convocatoria-print { page: informe; }
+  .convocatoria-print { page: informe; }
 }
