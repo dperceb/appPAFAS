@@ -6,6 +6,7 @@
 <title>ACTA PAFAS EA — Aplicación local</title>
 <link rel="stylesheet" href="assets/css/styles.css">
 <link rel="stylesheet" href="assets/css/print.css" media="print">
+<link rel="stylesheet" href="assets/css/pdf.css">
 </head>
 <body>
 
@@ -64,17 +65,20 @@
         <li>Para imprimir el acta o generarla en PDF, pulse <em>Imprimir ACTA</em> y elija "Guardar como PDF" en el
         diálogo de impresión del navegador.</li>
         <li>Para generar el informe de un único participante, vaya a <strong>Informe individual</strong>,
-        selecciónelo en la lista y pulse <em>Imprimir informe</em>.</li>
+        selecciónelo en la lista y pulse <em>Guardar informe en PDF</em>: elija la carpeta de destino y se creará un
+        archivo con el nombre <code>AAMMDD PAFAS Empleo Apellidos y nombre.pdf</code>.</li>
         <li>Para generar todos los informes de golpe, vaya a <strong>Informes en lote</strong>, seleccione los
-        participantes deseados y pulse <em>Generar informes</em>: se abrirá el diálogo de impresión con un informe
-        por página, listo para guardar como un único PDF o imprimir en papel.</li>
+        participantes deseados y pulse <em>Generar informes en PDF</em>: elija una carpeta y se guardará en ella un
+        PDF por participante con el mismo nomenclátor.</li>
         <li>Cuando cierre la convocatoria, use <em>Archivar en Histórico</em> desde la pestaña ACTA para mover los
         registros a <strong>Histórico</strong> y dejar el acta lista para la siguiente convocatoria.</li>
         <li>Consulte <strong>Estadística</strong> para ver el resumen de aptos/no aptos por empleo y sexo.</li>
       </ol>
-      <p class="muted">Nota: al ser una aplicación 100% local y sin macros, la generación de PDF se realiza con la
-      función "Imprimir" del navegador (Guardar como PDF), que sustituye a la exportación automática a PDF del
-      libro Excel original.</p>
+      <p class="muted">Nota: al ser una aplicación 100% local, los informes en PDF se generan en el propio navegador
+      (sin conexión a ningún servidor). La elección de carpeta de destino requiere abrir la aplicación desde un
+      servidor local (no funciona con doble clic sobre <code>index.html</code>); si el navegador no la soporta, los
+      PDF se descargan igualmente con el mismo nombre a la carpeta de Descargas. El ACTA se sigue imprimiendo con la
+      función "Imprimir" del navegador (Guardar como PDF).</p>
     </div>
   </section>
 
@@ -251,8 +255,10 @@
         <select id="informe-select"></select>
       </label>
       <div class="actions">
-        <button class="btn btn-primary" id="btn-informe-print">Imprimir informe</button>
+        <button class="btn btn-primary" id="btn-informe-print">Guardar informe en PDF</button>
       </div>
+      <p class="muted">Se generará un PDF con el nombre <code>AAMMDD PAFAS Empleo Apellidos y nombre.pdf</code> y se le
+      pedirá la carpeta donde guardarlo.</p>
       <div id="informe-preview" class="informe-preview"></div>
     </div>
   </section>
@@ -261,12 +267,12 @@
   <section id="tab-lote" class="tab-panel">
     <div class="card">
       <h2>Informes en lote</h2>
-      <p>Seleccione los participantes para los que desea generar el informe. Se abrirá el diálogo de impresión del
-      navegador con un informe por página (elija "Guardar como PDF" para obtener un único PDF con todos ellos).</p>
+      <p>Seleccione los participantes para los que desea generar el informe. Se le pedirá una carpeta y se guardará
+      en ella un archivo PDF por participante, con el nombre <code>AAMMDD PAFAS Empleo Apellidos y nombre.pdf</code>.</p>
       <div class="actions">
         <button class="btn" id="btn-lote-all">Seleccionar todos</button>
         <button class="btn" id="btn-lote-none">Deseleccionar todos</button>
-        <button class="btn btn-primary" id="btn-lote-print">Generar informes seleccionados</button>
+        <button class="btn btn-primary" id="btn-lote-print">Generar informes en PDF</button>
       </div>
       <div id="lote-lista" class="lote-lista"></div>
     </div>
@@ -311,9 +317,11 @@
 
 <div id="print-root"></div>
 
+<script src="assets/js/vendor/html2pdf.bundle.min.js"></script>
 <script src="assets/js/data.js"></script>
 <script src="assets/js/scoring.js"></script>
 <script src="assets/js/store.js"></script>
+<script src="assets/js/pdfExport.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

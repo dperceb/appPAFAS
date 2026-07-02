@@ -502,8 +502,31 @@ function initInforme() {
     const nombre = document.getElementById('informe-select').value;
     if (!nombre) { alert('Seleccione un participante.'); return; }
     const row = state.acta.participantes.find(p => p.nombre === nombre);
-    imprimir(construirInformeHtml(row));
+    generarInformesPdfConUI(document.getElementById('btn-informe-print'),
+      [{ row, html: construirInformeHtml(row) }]);
   });
+}
+
+// Genera uno o varios informes en PDF (pidiendo carpeta de destino) mostrando
+// progreso en el propio botón y un resumen final al usuario.
+async function generarInformesPdfConUI(btn, items) {
+  const textoOriginal = btn.textContent;
+  btn.disabled = true;
+  try {
+    const resultado = await PdfExport.generarInformes(items, state.acta.fecha, (actual, total) => {
+      btn.textContent = total > 1 ? `Generando ${actual}/${total}…` : 'Generando…';
+    });
+    if (!resultado) return; // el usuario canceló la selección de carpeta
+    const destino = resultado.carpeta ? 'en la carpeta seleccionada' : 'en la carpeta de Descargas';
+    const errores = resultado.fail ? ` (${resultado.fail} con error, revise la consola)` : '';
+    alert(`${resultado.ok} de ${items.length} informe(s) guardados ${destino}${errores}.`);
+  } catch (e) {
+    console.error(e);
+    alert('No se pudo generar el PDF: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+  }
 }
 
 function construirInformeHtml(row) {
@@ -587,8 +610,11 @@ function initLote() {
   document.getElementById('btn-lote-print').addEventListener('click', () => {
     const nombres = Array.from(document.querySelectorAll('.lote-check:checked')).map(c => c.dataset.nombre);
     if (nombres.length === 0) { alert('Seleccione al menos un participante.'); return; }
-    const html = nombres.map(n => construirInformeHtml(state.acta.participantes.find(p => p.nombre === n))).join('');
-    imprimir(html);
+    const items = nombres.map(n => {
+      const row = state.acta.participantes.find(p => p.nombre === n);
+      return { row, html: construirInformeHtml(row) };
+    });
+    generarInformesPdfConUI(document.getElementById('btn-lote-print'), items);
   });
 }
 

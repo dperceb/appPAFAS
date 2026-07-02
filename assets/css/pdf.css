@@ -1,0 +1,34 @@
+/* Estilos usados para generar los informes en PDF con html2pdf/html2canvas.
+   Duplican el aspecto de .informe-print (print.css) pero fuera de @media
+   print, ya que la captura se hace en pantalla normal.
+
+   .pdf-render-host oculta el contenido de la vista del usuario (nunca se
+   clona: html2pdf solo clona el elemento pasado a .from()). .pdf-render es
+   ese elemento y debe quedar en flujo normal (sin position:absolute/fixed),
+   porque html2pdf reinserta su clon dentro de un contenedor propio con
+   height:auto, y un hijo posicionado no contribuye a esa altura. */
+
+.pdf-render-host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.pdf-render {
+  width: 190mm;
+  background: #fff;
+  color: #1f2933;
+  font-family: -apple-system, "Segoe UI", Roboto, Calibri, Arial, sans-serif;
+}
+
+.pdf-render .informe-print { font-size: 11pt; }
+.pdf-render .informe-print h2 { text-align: center; font-size: 13pt; margin-top: 1.5rem; }
+.pdf-render .informe-print table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.pdf-render .informe-print th, .pdf-render .informe-print td { border: 1px solid #333; padding: 5px; }
+.pdf-render .informe-print .campo { margin: 0.3rem 0; }
+.pdf-render .informe-print .campo b { display: inline-block; min-width: 260px; }
+.pdf-render .informe-print .firma { margin-top: 3rem; text-align: center; }
