@@ -1,10 +1,16 @@
 // Generación de informes en PDF (uno por participante) con nomenclátor fijo
 // y guardado en una carpeta elegida por el usuario mediante la File System
-// Access API. Si el navegador no soporta elegir carpeta (p. ej. al abrir
-// index.html con doble clic, sin servidor local), cada PDF se descarga con
-// el mismo nombre a la carpeta de Descargas del navegador.
+// Access API. Si el navegador no soporta elegir carpeta, o el acceso está
+// bloqueado (p. ej. por políticas de un equipo institucional gestionado),
+// cada PDF se descarga igualmente con el mismo nombre a la carpeta de
+// Descargas del navegador. Configuración permite recordar una carpeta para
+// no tener que elegirla cada vez que se generan informes.
 
 const PdfExport = (() => {
+
+  const DB_NAME = 'pafas_pdf_carpeta';
+  const STORE = 'handles';
+  const KEY = 'carpeta';
 
   function sanitizarNombreArchivo(s) {
     return String(s || '')
@@ -32,13 +38,116 @@ const PdfExport = (() => {
     return typeof window.showDirectoryPicker === 'function';
   }
 
-  async function elegirCarpeta() {
-    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  /* ---------------------------------------------------------------------- */
+  /* Persistencia de la carpeta recordada (IndexedDB: los FileSystemHandle   */
+  /* no se pueden guardar en localStorage, solo en IndexedDB).               */
+  /* ---------------------------------------------------------------------- */
+
+  function abrirDb() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) { reject(new Error('IndexedDB no disponible.')); return; }
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function guardarCarpetaRecordada(handle) {
+    const db = await abrirDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put(handle, KEY);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async function obtenerCarpetaRecordada() {
+    const db = await abrirDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const req = tx.objectStore(STORE).get(KEY);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function olvidarCarpetaRecordada() {
+    const db = await abrirDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).delete(KEY);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async function verificarPermiso(dirHandle) {
     const opts = { mode: 'readwrite' };
-    const permiso = (await dirHandle.queryPermission(opts)) === 'granted'
-      ? 'granted' : await dirHandle.requestPermission(opts);
-    if (permiso !== 'granted') throw new Error('Permiso de escritura denegado para la carpeta seleccionada.');
+    if ((await dirHandle.queryPermission(opts)) === 'granted') return true;
+    if ((await dirHandle.requestPermission(opts)) === 'granted') return true;
+    return false;
+  }
+
+  // Usado desde Configuración: abre el selector, guarda la carpeta elegida
+  // para las próximas veces y la devuelve. Lanza si el usuario cancela o si
+  // el navegador/entorno no permite elegir carpeta.
+  async function elegirYRecordarCarpeta() {
+    if (!soportaSeleccionCarpeta()) {
+      throw new Error('Este navegador no permite elegir una carpeta del sistema.');
+    }
+    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    const ok = await verificarPermiso(dirHandle);
+    if (!ok) throw new Error('Permiso de escritura denegado para la carpeta seleccionada.');
+    await guardarCarpetaRecordada(dirHandle);
     return dirHandle;
+  }
+
+  async function olvidarCarpeta() {
+    await olvidarCarpetaRecordada();
+  }
+
+  // Info para mostrar en Configuración: { soportado, nombre } (nombre null si no hay carpeta recordada).
+  async function infoCarpetaRecordada() {
+    if (!soportaSeleccionCarpeta()) return { soportado: false, nombre: null };
+    try {
+      const handle = await obtenerCarpetaRecordada();
+      return { soportado: true, nombre: handle ? handle.name : null };
+    } catch (e) {
+      return { soportado: true, nombre: null };
+    }
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Resolución de la carpeta de destino al generar informes.                */
+  /* ---------------------------------------------------------------------- */
+
+  // Intenta, por este orden: 1) la carpeta recordada en Configuración,
+  // 2) pedir una carpeta nueva. Si nada funciona (no soportado, bloqueado
+  // por política del navegador, permiso denegado...) devuelve null y los
+  // PDF se descargarán individualmente, salvo que el usuario cancele
+  // explícitamente el selector (entonces se relanza para abortar todo).
+  async function obtenerCarpetaDestino() {
+    try {
+      const recordada = await obtenerCarpetaRecordada();
+      if (recordada && await verificarPermiso(recordada)) return recordada;
+    } catch (e) {
+      // Sin IndexedDB o carpeta recordada inválida: seguimos con el flujo normal.
+    }
+
+    if (!soportaSeleccionCarpeta()) return null;
+    try {
+      const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      const ok = await verificarPermiso(dirHandle);
+      return ok ? dirHandle : null;
+    } catch (e) {
+      if (e && e.name === 'AbortError') throw e; // el usuario canceló el selector explícitamente
+      // Bloqueado por el navegador o por política del entorno (p. ej. equipos
+      // institucionales gestionados): seguimos sin carpeta, se descargará cada PDF.
+      console.warn('Selección de carpeta no disponible, los PDF se descargarán:', e);
+      return null;
+    }
   }
 
   async function generarBlobPdf(htmlInterno) {
@@ -88,14 +197,12 @@ const PdfExport = (() => {
   async function generarInformes(items, fechaActaISO, onProgress) {
     if (items.length === 0) return null;
 
-    let dirHandle = null;
-    if (soportaSeleccionCarpeta()) {
-      try {
-        dirHandle = await elegirCarpeta();
-      } catch (e) {
-        if (e && e.name === 'AbortError') return null; // el usuario canceló el selector de carpeta
-        throw e;
-      }
+    let dirHandle;
+    try {
+      dirHandle = await obtenerCarpetaDestino();
+    } catch (e) {
+      if (e && e.name === 'AbortError') return null; // el usuario canceló el selector de carpeta
+      throw e;
     }
 
     const usados = new Map();
@@ -123,5 +230,8 @@ const PdfExport = (() => {
     return { ok, fail, carpeta: !!dirHandle };
   }
 
-  return { generarInformes, soportaSeleccionCarpeta, nombreBase };
+  return {
+    generarInformes, soportaSeleccionCarpeta, nombreBase,
+    elegirYRecordarCarpeta, olvidarCarpeta, infoCarpetaRecordada
+  };
 })();

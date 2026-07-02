@@ -125,6 +125,46 @@ function initConfiguracion() {
     persist();
     location.reload();
   });
+
+  initCarpetaInformes();
+}
+
+async function initCarpetaInformes() {
+  const estado = document.getElementById('carpeta-informes-estado');
+  const btnElegir = document.getElementById('btn-carpeta-elegir');
+  const btnOlvidar = document.getElementById('btn-carpeta-olvidar');
+
+  async function refrescar() {
+    const info = await PdfExport.infoCarpetaRecordada();
+    if (!info.soportado) {
+      estado.textContent = 'Su navegador (o las políticas de este equipo) no permiten elegir carpeta: los informes se descargarán individualmente a la carpeta de Descargas.';
+      btnElegir.disabled = true;
+      btnOlvidar.hidden = true;
+    } else if (info.nombre) {
+      estado.textContent = `Carpeta recordada: "${info.nombre}". Los informes se guardarán ahí automáticamente.`;
+      btnElegir.disabled = false;
+      btnOlvidar.hidden = false;
+    } else {
+      estado.textContent = 'No hay ninguna carpeta recordada: se preguntará cada vez que genere informes.';
+      btnElegir.disabled = false;
+      btnOlvidar.hidden = true;
+    }
+  }
+
+  btnElegir.addEventListener('click', async () => {
+    try {
+      await PdfExport.elegirYRecordarCarpeta();
+    } catch (e) {
+      if (e && e.name !== 'AbortError') alert('No se pudo elegir la carpeta: ' + e.message);
+    }
+    refrescar();
+  });
+  btnOlvidar.addEventListener('click', async () => {
+    await PdfExport.olvidarCarpeta();
+    refrescar();
+  });
+
+  refrescar();
 }
 
 /* ---------------------------------------------------------------------- */

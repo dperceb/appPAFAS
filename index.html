@@ -142,6 +142,16 @@
         </div>
       </form>
       <hr>
+      <h3>Carpeta de informes</h3>
+      <p>Recuerde una carpeta para guardar en ella los PDF de los informes (individual y en lote) sin tener que
+      elegirla cada vez. Requiere un navegador basado en Chromium servido por HTTP/HTTPS; si su navegador o las
+      políticas del equipo no lo permiten, los informes se descargarán individualmente a la carpeta de Descargas.</p>
+      <p id="carpeta-informes-estado" class="muted">Comprobando disponibilidad…</p>
+      <div class="actions">
+        <button class="btn" id="btn-carpeta-elegir">Elegir carpeta</button>
+        <button class="btn btn-danger" id="btn-carpeta-olvidar" hidden>Quitar carpeta recordada</button>
+      </div>
+      <hr>
       <h3>Copia de seguridad</h3>
       <p>Todos los datos (configuración, acta, convocatoria e histórico) se guardan en este navegador. Exporte una
       copia de seguridad periódicamente o para trasladar los datos a otro equipo.</p>
