@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACTA PAFAS EA — Aplicación local</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+<link rel="stylesheet" href="assets/css/print.css" media="print">
+</head>
+<body>
+
+<header class="app-header no-print">
+  <div class="brand">
+    <span class="brand-title">ACTA PAFAS EA</span>
+    <span class="brand-sub">Pruebas de Aptitud Física — Ejército del Aire y del Espacio</span>
+  </div>
+  <nav class="tabs" id="main-tabs">
+    <button data-tab="inicio" class="tab-btn active">Inicio</button>
+    <button data-tab="instrucciones" class="tab-btn">Instrucciones</button>
+    <button data-tab="configuracion" class="tab-btn">Configuración</button>
+    <button data-tab="convocatoria" class="tab-btn">Convocatoria</button>
+    <button data-tab="acta" class="tab-btn">ACTA</button>
+    <button data-tab="informe" class="tab-btn">Informe individual</button>
+    <button data-tab="lote" class="tab-btn">Informes en lote</button>
+    <button data-tab="estadistica" class="tab-btn">Estadística</button>
+    <button data-tab="historico" class="tab-btn">Histórico</button>
+  </nav>
+</header>
+
+<main class="no-print">
+
+  <!-- INICIO -->
+  <section id="tab-inicio" class="tab-panel active">
+    <div class="card">
+      <h1>ACTA PAFAS EA <small>v. web 1.0</small></h1>
+      <p>Aplicación estática para la gestión de las Pruebas de Aptitud Física del Ejército del Aire y del Espacio
+      (PAFAS). Convierte a formato web todas las funcionalidades del libro Excel original
+      <em>ACTA_PAFAS_EA_HTLM.xlsm</em>: configuración de la unidad, convocatoria, acta de resultados con cálculo
+      automático de puntuaciones y aptitud, informes individuales y en lote, estadísticas y archivo histórico.</p>
+      <p><strong>Funciona 100% en local:</strong> no se envía ningún dato a ningún servidor. Toda la información
+      se guarda en el propio navegador (almacenamiento local). Use <em>Configuración → Copia de seguridad</em>
+      para exportar/importar sus datos como archivo JSON.</p>
+      <div class="quick-actions">
+        <button class="btn btn-primary" data-goto="configuracion">1. Configurar unidad</button>
+        <button class="btn btn-primary" data-goto="acta">2. Rellenar ACTA</button>
+        <button class="btn btn-primary" data-goto="informe">3. Generar informes</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTRUCCIONES -->
+  <section id="tab-instrucciones" class="tab-panel">
+    <div class="card">
+      <h2>Instrucciones de uso</h2>
+      <ol class="instructions">
+        <li>Vaya a <strong>Configuración</strong> y rellene los datos de la Junta zonal, Unidad, localidad, titulado
+        en Educación Física y jefe de la unidad. Pulse <em>Guardar</em>.</li>
+        <li>Vaya a <strong>ACTA</strong>, indique la fecha, hora y lugar de las pruebas y añada una fila por cada
+        participante con sus datos y marcas obtenidas. La edad, el grupo, la puntuación de cada prueba, el total y el
+        resultado APTO/NO APTO se calculan automáticamente, igual que en el libro Excel original.</li>
+        <li>Mientras esté rellenando el acta, mantenga el estado en <strong>INICIAL</strong> (sin colores). Cuando
+        haya terminado, cambie el estado a <strong>FINAL</strong> para resaltar el personal NO APTO y las celdas
+        incompletas antes de imprimir.</li>
+        <li>Para imprimir el acta o generarla en PDF, pulse <em>Imprimir ACTA</em> y elija "Guardar como PDF" en el
+        diálogo de impresión del navegador.</li>
+        <li>Para generar el informe de un único participante, vaya a <strong>Informe individual</strong>,
+        selecciónelo en la lista y pulse <em>Imprimir informe</em>.</li>
+        <li>Para generar todos los informes de golpe, vaya a <strong>Informes en lote</strong>, seleccione los
+        participantes deseados y pulse <em>Generar informes</em>: se abrirá el diálogo de impresión con un informe
+        por página, listo para guardar como un único PDF o imprimir en papel.</li>
+        <li>Cuando cierre la convocatoria, use <em>Archivar en Histórico</em> desde la pestaña ACTA para mover los
+        registros a <strong>Histórico</strong> y dejar el acta lista para la siguiente convocatoria.</li>
+        <li>Consulte <strong>Estadística</strong> para ver el resumen de aptos/no aptos por empleo y sexo.</li>
+      </ol>
+      <p class="muted">Nota: al ser una aplicación 100% local y sin macros, la generación de PDF se realiza con la
+      función "Imprimir" del navegador (Guardar como PDF), que sustituye a la exportación automática a PDF del
+      libro Excel original.</p>
+    </div>
+  </section>
+
+  <!-- CONFIGURACIÓN -->
+  <section id="tab-configuracion" class="tab-panel">
+    <div class="card">
+      <h2>Configuración</h2>
+      <p>Antes de generar informes debe configurar estos valores. Solo tendrá que modificarlos si cambian.</p>
+      <form id="form-config" class="form-grid">
+        <label>Junta zonal
+          <select id="cfg-juntaZonal" required></select>
+        </label>
+        <div class="field-inline">
+          <label>Artículo de la Unidad
+            <select id="cfg-unidadArticulo">
+              <option value="DEL">DEL</option>
+              <option value="DE LA">DE LA</option>
+            </select>
+          </label>
+          <label>Unidad
+            <input type="text" id="cfg-unidad" required placeholder="p. ej. GRUSEG">
+          </label>
+        </div>
+        <label>Localidad
+          <input type="text" id="cfg-localidad" required placeholder="p. ej. Madrid">
+        </label>
+        <fieldset>
+          <legend>Titulado/a en Educación Física (firmante del informe personal)</legend>
+          <div class="field-inline">
+            <label>Artículo
+              <select id="cfg-tituladoArticulo">
+                <option value="El">El</option>
+                <option value="La">La</option>
+              </select>
+            </label>
+            <label>Empleo
+              <select id="cfg-tituladoEmpleo" required></select>
+            </label>
+          </div>
+          <label>Nombre completo
+            <input type="text" id="cfg-tituladoNombre" required>
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>Jefe/a de Unidad</legend>
+          <div class="field-inline">
+            <label>Artículo
+              <select id="cfg-jefeArticulo">
+                <option value="El">El</option>
+                <option value="La">La</option>
+              </select>
+            </label>
+            <label>Empleo
+              <select id="cfg-jefeEmpleo" required></select>
+            </label>
+          </div>
+          <label>Nombre completo
+            <input type="text" id="cfg-jefeNombre" required>
+          </label>
+        </fieldset>
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Guardar configuración</button>
+        </div>
+      </form>
+      <hr>
+      <h3>Copia de seguridad</h3>
+      <p>Todos los datos (configuración, acta, convocatoria e histórico) se guardan en este navegador. Exporte una
+      copia de seguridad periódicamente o para trasladar los datos a otro equipo.</p>
+      <div class="actions">
+        <button class="btn" id="btn-export-backup">Exportar copia de seguridad (JSON)</button>
+        <label class="btn btn-file">Importar copia de seguridad
+          <input type="file" id="input-import-backup" accept="application/json" hidden>
+        </label>
+        <button class="btn btn-danger" id="btn-reset-all">Borrar todos los datos</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONVOCATORIA -->
+  <section id="tab-convocatoria" class="tab-panel">
+    <div class="card">
+      <h2>Convocatoria</h2>
+      <div class="form-grid form-grid-3">
+        <label>Fecha de las pruebas <input type="date" id="conv-fecha"></label>
+        <label>Hora de las pruebas <input type="time" id="conv-hora"></label>
+        <label>Lugar de realización <input type="text" id="conv-lugar"></label>
+      </div>
+      <div class="actions">
+        <button class="btn" id="btn-conv-add">+ Añadir participante</button>
+        <button class="btn" id="btn-conv-from-acta">Cargar participantes desde ACTA</button>
+        <button class="btn btn-primary" id="btn-conv-print">Imprimir convocatoria</button>
+      </div>
+      <div class="table-wrap">
+        <table id="tabla-convocatoria" class="data-table">
+          <thead><tr><th>Orden</th><th>Empleo</th><th>Apellidos y nombre</th><th>DNI</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACTA -->
+  <section id="tab-acta" class="tab-panel">
+    <div class="card">
+      <h2>ACTA de resultados</h2>
+      <div class="form-grid form-grid-4">
+        <label>Fecha de las pruebas <input type="date" id="acta-fecha"></label>
+        <label>Hora <input type="time" id="acta-hora"></label>
+        <label>Lugar de realización <input type="text" id="acta-lugar"></label>
+        <label>Estado del acta
+          <select id="acta-estado">
+            <option value="INICIAL">INICIAL (sin colores, para rellenar)</option>
+            <option value="FINAL">FINAL (resalta NO APTO / incompletos)</option>
+          </select>
+        </label>
+      </div>
+      <div class="acta-summary">
+        <span>Total presentados: <strong id="acta-total-presentados">0</strong></span>
+      </div>
+      <div class="actions">
+        <button class="btn" id="btn-acta-add">+ Añadir participante</button>
+        <button class="btn btn-primary" id="btn-acta-print">Imprimir / PDF del ACTA</button>
+        <button class="btn" id="btn-acta-archivar">Archivar en Histórico y vaciar</button>
+      </div>
+      <div class="legend">
+        <span class="chip chip-female">Sexo F</span>
+        <span class="chip chip-exempt">45-65 años (circuito exento)</span>
+        <span class="chip chip-partial">Prueba no superada (&lt;20 pts)</span>
+        <span class="chip chip-fail">NO APTO (estado FINAL)</span>
+        <span class="chip chip-incomplete">Incompleto (estado FINAL)</span>
+      </div>
+      <div class="table-wrap table-wrap-wide">
+        <table id="tabla-acta" class="data-table acta-table">
+          <thead>
+            <tr>
+              <th rowspan="2">Orden</th>
+              <th rowspan="2">Destino</th>
+              <th rowspan="2">Motivo<br>(P/E)</th>
+              <th rowspan="2">Empleo</th>
+              <th rowspan="2">Apellidos y nombre</th>
+              <th rowspan="2">DNI</th>
+              <th rowspan="2">Fecha nac.</th>
+              <th rowspan="2">Sexo</th>
+              <th rowspan="2">Edad</th>
+              <th rowspan="2">Grupo</th>
+              <th rowspan="2">Rec.<br>médico</th>
+              <th rowspan="2">Incidencia</th>
+              <th colspan="2">Abdominales</th>
+              <th colspan="2">Flexiones</th>
+              <th colspan="2">Circuito A-V</th>
+              <th colspan="2">2000 m</th>
+              <th rowspan="2">Puntuación<br>Final</th>
+              <th rowspan="2">Apto</th>
+              <th rowspan="2"></th>
+            </tr>
+            <tr>
+              <th>Marca</th><th>Ptos</th>
+              <th>Marca</th><th>Ptos</th>
+              <th>Marca (s)</th><th>Ptos</th>
+              <th>Marca (m:s)</th><th>Ptos</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- INFORME INDIVIDUAL -->
+  <section id="tab-informe" class="tab-panel">
+    <div class="card">
+      <h2>Informe individual</h2>
+      <label class="select-participante">Participante
+        <select id="informe-select"></select>
+      </label>
+      <div class="actions">
+        <button class="btn btn-primary" id="btn-informe-print">Imprimir informe</button>
+      </div>
+      <div id="informe-preview" class="informe-preview"></div>
+    </div>
+  </section>
+
+  <!-- INFORMES EN LOTE -->
+  <section id="tab-lote" class="tab-panel">
+    <div class="card">
+      <h2>Informes en lote</h2>
+      <p>Seleccione los participantes para los que desea generar el informe. Se abrirá el diálogo de impresión del
+      navegador con un informe por página (elija "Guardar como PDF" para obtener un único PDF con todos ellos).</p>
+      <div class="actions">
+        <button class="btn" id="btn-lote-all">Seleccionar todos</button>
+        <button class="btn" id="btn-lote-none">Deseleccionar todos</button>
+        <button class="btn btn-primary" id="btn-lote-print">Generar informes seleccionados</button>
+      </div>
+      <div id="lote-lista" class="lote-lista"></div>
+    </div>
+  </section>
+
+  <!-- ESTADÍSTICA -->
+  <section id="tab-estadistica" class="tab-panel">
+    <div class="card">
+      <h2>Estadística</h2>
+      <div class="form-grid form-grid-3">
+        <label>Origen de los datos
+          <select id="est-origen">
+            <option value="acta">ACTA actual</option>
+            <option value="historico">Histórico (por fecha)</option>
+          </select>
+        </label>
+        <label>Fecha (si Histórico)
+          <select id="est-fecha"></select>
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table id="tabla-estadistica" class="data-table"></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTÓRICO -->
+  <section id="tab-historico" class="tab-panel">
+    <div class="card">
+      <h2>Histórico de marcas y puntuación</h2>
+      <div class="actions">
+        <input type="search" id="hist-buscar" placeholder="Buscar por nombre o DNI…">
+        <button class="btn" id="btn-hist-csv">Exportar CSV</button>
+      </div>
+      <div class="table-wrap table-wrap-wide">
+        <table id="tabla-historico" class="data-table"></table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="print-root"></div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/scoring.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
