@@ -51,14 +51,27 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
 .brand {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  margin-bottom: 0.85rem;
 }
 .brand-title { font-size: 1.35rem; font-weight: 700; letter-spacing: 0.03em; }
 .brand-sub { font-size: 0.8rem; color: #bfd8ee; font-weight: 400; }
+
+.brand-logo {
+  height: 46px;
+  width: auto;
+  flex-shrink: 0;
+}
 
 .tabs {
   display: flex;
@@ -283,6 +296,7 @@ legend { font-weight: 700; color: var(--blue-dark); padding: 0 0.4rem; }
 @media (max-width: 560px) {
   .app-header { padding: 0.75rem 1rem 0; }
   .brand-title { font-size: 1.15rem; }
+  .brand-logo { height: 32px; }
   main { padding: 1rem 0.75rem 2rem; }
   .card { padding: 1rem; border-radius: var(--radius-md); }
   .form-grid-3, .form-grid-4 { grid-template-columns: 1fr; }
