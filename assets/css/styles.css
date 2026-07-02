@@ -222,7 +222,6 @@ legend { font-weight: 700; color: var(--blue-dark); padding: 0 0.4rem; }
 .acta-table td.nombre input { min-width: 10rem; text-align: left; }
 .acta-table td.destino input { min-width: 6rem; text-align: left; }
 
-.row-female { background: #fdf1f6 !important; }
 .row-exempt td.edad, .row-exempt td.grupo { background: var(--ok-bg); }
 .score-partial { color: var(--danger); font-weight: 700; }
 .row-final-fail { background: #fbdcd9 !important; }
