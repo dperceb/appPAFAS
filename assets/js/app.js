@@ -63,9 +63,39 @@ function nombreCapitalizado(s) {
   return s || '';
 }
 
+const EDAD_MINIMA_PAFAS = 18;
+
+function isoADdMmYyyy(iso) {
+  if (!iso) return '';
+  const partes = iso.split('-');
+  if (partes.length !== 3) return '';
+  const [y, m, d] = partes;
+  return `${d}/${m}/${y}`;
+}
+
+// Convierte "dd/mm/aaaa" a ISO ("aaaa-mm-dd"), validando que sea una fecha
+// real (rechaza p. ej. 31/02/2000) y que no sea futura. Devuelve null si no
+// es válida.
+function parseFechaDdMmYyyy(texto) {
+  const m = String(texto || '').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return null;
+  const dia = Number(m[1]), mes = Number(m[2]), anio = Number(m[3]);
+  const d = new Date(anio, mes - 1, dia);
+  if (d.getFullYear() !== anio || d.getMonth() !== mes - 1 || d.getDate() !== dia) return null;
+  if (d > new Date()) return null;
+  return `${anio}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+}
+
 function escapeHtml(s) {
   return String(s === undefined || s === null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// El ACTA guarda el empleo abreviado (p. ej. "Tcol."); el informe individual
+// necesita el nombre largo (p. ej. "Teniente coronel").
+function empleoLargo(abrev) {
+  const i = PAFAS_DATA.empleosAbrev.indexOf(abrev);
+  return i === -1 ? (abrev || '') : PAFAS_DATA.empleos[i];
 }
 
 /* ---------------------------------------------------------------------- */
@@ -125,46 +155,6 @@ function initConfiguracion() {
     persist();
     location.reload();
   });
-
-  initCarpetaInformes();
-}
-
-async function initCarpetaInformes() {
-  const estado = document.getElementById('carpeta-informes-estado');
-  const btnElegir = document.getElementById('btn-carpeta-elegir');
-  const btnOlvidar = document.getElementById('btn-carpeta-olvidar');
-
-  async function refrescar() {
-    const info = await PdfExport.infoCarpetaRecordada();
-    if (!info.soportado) {
-      estado.textContent = 'Su navegador (o las políticas de este equipo) no permiten elegir carpeta: los informes en lote se descargarán empaquetados en un ZIP, y el individual directamente.';
-      btnElegir.disabled = true;
-      btnOlvidar.hidden = true;
-    } else if (info.nombre) {
-      estado.textContent = `Carpeta recordada: "${info.nombre}". Los informes se guardarán ahí automáticamente.`;
-      btnElegir.disabled = false;
-      btnOlvidar.hidden = false;
-    } else {
-      estado.textContent = 'No hay ninguna carpeta recordada: se preguntará cada vez que genere informes.';
-      btnElegir.disabled = false;
-      btnOlvidar.hidden = true;
-    }
-  }
-
-  btnElegir.addEventListener('click', async () => {
-    try {
-      await PdfExport.elegirYRecordarCarpeta();
-    } catch (e) {
-      if (e && e.name !== 'AbortError') alert('No se pudo elegir la carpeta: ' + e.message);
-    }
-    refrescar();
-  });
-  btnOlvidar.addEventListener('click', async () => {
-    await PdfExport.olvidarCarpeta();
-    refrescar();
-  });
-
-  refrescar();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -187,7 +177,7 @@ function renderConvocatoria() {
       <td><button class="btn-remove-row" data-idx="${idx}" title="Eliminar">✕</button></td>
     `;
     tbody.appendChild(tr);
-    fillSelect(tr.querySelector('select'), PAFAS_DATA.empleos, { placeholder: '—' });
+    fillSelect(tr.querySelector('select'), PAFAS_DATA.empleosAbrev, { placeholder: '—' });
     tr.querySelector('select').value = p.empleo;
   });
 }
@@ -318,6 +308,13 @@ function onActaCellEdit(e) {
   const { idx, field } = e.target.dataset;
   if (idx === undefined) return;
   const row = state.acta.participantes[idx];
+
+  if (field === 'fechaNacimiento') {
+    if (e.type !== 'change') return; // solo se valida al confirmar (blur/Enter), no en cada tecla
+    onFechaNacimientoEdit(e.target, row, Number(idx));
+    return;
+  }
+
   let val = e.target.value;
   if (ACTA_NUMERIC_FIELDS.has(field)) {
     row[field] = val === '' ? '' : Number(val);
@@ -326,6 +323,42 @@ function onActaCellEdit(e) {
   }
   persist();
   updateActaRow(Number(idx));
+  updateActaResumen();
+}
+
+// Valida la fecha de nacimiento al confirmar (blur/Enter): debe ser una
+// fecha real y suponer al menos EDAD_MINIMA_PAFAS años en la fecha del ACTA
+// (o en la fecha actual si el ACTA no tiene fecha). Si no es válida, se dejan
+// el texto tal cual para que el usuario lo corrija (marcado en rojo) y no se
+// sobrescribe el valor guardado.
+function onFechaNacimientoEdit(input, row, idx) {
+  const texto = input.value.trim();
+  if (texto === '') {
+    row.fechaNacimiento = '';
+    input.classList.remove('input-error');
+    persist();
+    updateActaRow(idx);
+    updateActaResumen();
+    return;
+  }
+
+  const iso = parseFechaDdMmYyyy(texto);
+  const fechaRef = state.acta.fecha || new Date().toISOString().slice(0, 10);
+  const edad = iso ? Scoring.calcEdad(iso, fechaRef) : null;
+
+  if (!iso || edad === null || edad < EDAD_MINIMA_PAFAS) {
+    input.classList.add('input-error');
+    input.title = !iso
+      ? 'Fecha no válida. Use el formato dd/mm/aaaa.'
+      : `La edad debe ser de al menos ${EDAD_MINIMA_PAFAS} años en la fecha de las pruebas.`;
+    return;
+  }
+
+  input.classList.remove('input-error');
+  input.title = '';
+  row.fechaNacimiento = iso;
+  persist();
+  updateActaRow(idx);
   updateActaResumen();
 }
 
@@ -351,7 +384,8 @@ function buildActaRowElement(row, idx) {
     <td><select data-idx="${idx}" data-field="empleo" class="sel-empleo"></select></td>
     <td class="nombre"><input type="text" data-idx="${idx}" data-field="nombre" value="${escapeHtml(row.nombre)}"></td>
     <td><input type="text" data-idx="${idx}" data-field="dni" value="${escapeHtml(row.dni)}"></td>
-    <td><input type="date" data-idx="${idx}" data-field="fechaNacimiento" value="${row.fechaNacimiento || ''}"></td>
+    <td><input type="text" class="fecha-nac-input" placeholder="dd/mm/aaaa" maxlength="10" inputmode="numeric"
+        data-idx="${idx}" data-field="fechaNacimiento" value="${isoADdMmYyyy(row.fechaNacimiento)}"></td>
     <td class="sexo-cell"><select data-idx="${idx}" data-field="sexo">
         <option value="M" ${row.sexo === 'M' ? 'selected' : ''}>M</option>
         <option value="F" ${row.sexo === 'F' ? 'selected' : ''}>F</option>
@@ -377,7 +411,7 @@ function buildActaRowElement(row, idx) {
     <td class="readonly apto">-</td>
     <td><button class="btn-remove-row" data-idx="${idx}" title="Eliminar fila">✕</button></td>
   `;
-  fillSelect(tr.querySelector('.sel-empleo'), PAFAS_DATA.empleos, { placeholder: '—' });
+  fillSelect(tr.querySelector('.sel-empleo'), PAFAS_DATA.empleosAbrev, { placeholder: '—' });
   tr.querySelector('.sel-empleo').value = row.empleo;
   fillSelect(tr.querySelector('.sel-incidencia'), PAFAS_DATA.motivosIncidencia, { placeholder: '-' });
   tr.querySelector('.sel-incidencia').value = row.incidencia;
@@ -394,10 +428,10 @@ function updateActaRow(idx) {
   tr.querySelector('.edad').textContent = calc.edad === null ? '-' : calc.edad;
   tr.querySelector('.grupo').textContent = calc.grupo === null ? '-' : calc.grupo;
 
-  setScoreCell(tr.querySelector('.abd-p'), calc.n);
-  setScoreCell(tr.querySelector('.flex-p'), calc.p);
-  setScoreCell(tr.querySelector('.circ-p'), calc.r);
-  setScoreCell(tr.querySelector('.res-p'), calc.t);
+  setScoreCell(tr.querySelector('.abd-p'), calc.n, tr.querySelector('[data-field="abdMarca"]'));
+  setScoreCell(tr.querySelector('.flex-p'), calc.p, tr.querySelector('[data-field="flexMarca"]'));
+  setScoreCell(tr.querySelector('.circ-p'), calc.r, tr.querySelector('[data-field="circMarca"]'));
+  setScoreCell(tr.querySelector('.res-p'), calc.t, tr.querySelector('[data-field="resMarca"]'));
 
   tr.querySelector('.total').textContent = calc.total === '' ? '-' : calc.total;
   tr.querySelector('.apto').textContent = calc.apto || '-';
@@ -424,9 +458,11 @@ function updateActaRow(idx) {
   refreshDniDuplicates();
 }
 
-function setScoreCell(td, val) {
+function setScoreCell(td, val, marcaInput) {
   td.textContent = val === '' || val === undefined ? '-' : val;
-  td.classList.toggle('score-partial', typeof val === 'number' && val < 20 && val > 0);
+  const partial = typeof val === 'number' && val < 20 && val > 0;
+  td.classList.toggle('score-partial', partial);
+  if (marcaInput) marcaInput.classList.toggle('score-partial', partial);
 }
 
 function refreshDniDuplicates() {
@@ -538,39 +574,25 @@ function renderInformeSelect() {
 
 function initInforme() {
   document.getElementById('informe-select').addEventListener('change', renderInformePreview);
-  document.getElementById('btn-informe-print').addEventListener('click', () => {
+  document.getElementById('btn-informe-print').addEventListener('click', async () => {
     const nombre = document.getElementById('informe-select').value;
     if (!nombre) { alert('Seleccione un participante.'); return; }
     const row = state.acta.participantes.find(p => p.nombre === nombre);
-    generarInformesPdfConUI(document.getElementById('btn-informe-print'),
-      [{ row, html: construirInformeHtml(row) }]);
+    const btn = document.getElementById('btn-informe-print');
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Generando…';
+    try {
+      const resultado = await PdfExport.generarInformeIndividual(row, construirInformeHtml(row), state.acta.fecha);
+      alert(resultado.ok ? 'Informe descargado correctamente.' : 'No se pudo generar el PDF. Revise la consola.');
+    } catch (e) {
+      console.error(e);
+      alert('No se pudo generar el PDF: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = textoOriginal;
+    }
   });
-}
-
-// Genera uno o varios informes en PDF (pidiendo carpeta de destino) mostrando
-// progreso en el propio botón y un resumen final al usuario.
-async function generarInformesPdfConUI(btn, items) {
-  const textoOriginal = btn.textContent;
-  btn.disabled = true;
-  try {
-    const resultado = await PdfExport.generarInformes(items, state.acta.fecha, (actual, total, row, fase) => {
-      if (fase === 'zip') { btn.textContent = 'Empaquetando ZIP…'; return; }
-      btn.textContent = total > 1 ? `Generando ${actual}/${total}…` : 'Generando…';
-    });
-    if (!resultado) return; // el usuario canceló la selección de carpeta
-    const errores = resultado.fail ? ` (${resultado.fail} con error, revise la consola)` : '';
-    let destino;
-    if (resultado.modo === 'carpeta') destino = 'en la carpeta seleccionada';
-    else if (resultado.modo === 'zip') destino = 'empaquetados en un único archivo ZIP (el navegador no permite elegir carpeta)';
-    else destino = 'descargados directamente (el navegador no permite elegir carpeta)';
-    alert(`${resultado.ok} de ${items.length} informe(s) ${destino}${errores}.`);
-  } catch (e) {
-    console.error(e);
-    alert('No se pudo generar el PDF: ' + e.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = textoOriginal;
-  }
 }
 
 function construirInformeHtml(row) {
@@ -594,12 +616,13 @@ function construirInformeHtml(row) {
       <h2>INFORME DE CONDICIONES FÍSICAS</h2>
       <div class="campo"><b>D./Dª.:</b> ${escapeHtml(row.nombre)}</div>
       <div class="campo"><b>DNI/TMI:</b> ${escapeHtml(row.dni)}</div>
-      <div class="campo"><b>EMPLEO:</b> ${escapeHtml(row.empleo)}</div>
+      <div class="campo"><b>EMPLEO:</b> ${escapeHtml(empleoLargo(row.empleo))}</div>
       <div class="campo"><b>FECHA DE NACIMIENTO:</b> ${formatFechaCorta(row.fechaNacimiento)}</div>
       <div class="campo"><b>DESTINO:</b> ${escapeHtml(row.destino)}</div>
       <div class="campo"><b>MOTIVO DE LAS PRUEBAS (PERIÓDICO/EXTRAORDINARIO):</b> ${escapeHtml(calc.motivoPruebas)}</div>
       <div class="campo-caja"><span>RECONOCIMIENTO MÉDICO (APTO/ NO APTO):</span><b class="caja">${escapeHtml(row.recMedico)}</b></div>
       <table>
+        <colgroup><col class="col-prueba"><col class="col-marca"><col class="col-puntos"></colgroup>
         <thead><tr><th>PRUEBA</th><th>MARCA</th><th>PUNTOS</th></tr></thead>
         <tbody>
           <tr><td>FLEXIONES DE TRONCO</td><td>${row.abdMarca}</td><td>${calc.n}</td></tr>
@@ -613,18 +636,20 @@ function construirInformeHtml(row) {
       <div class="campo-caja"><span>NO SUPERADO (MOTIVO):</span><b class="caja">${escapeHtml(motivoNoSuperado)}</b></div>
       <div class="campo-caja"><span>FECHA PARA LA PRÓXIMA EVALUACIÓN (AÑO):</span><b class="caja">${proximaEval}</b></div>
       <p class="informe-fecha">En ${escapeHtml(cfg.localidad)}, a ${formatFechaEs(state.acta.fecha)}</p>
-      <div class="firma">
-        <p>${escapeHtml(cfg.tituladoArticulo)} ${escapeHtml(cfg.tituladoEmpleo)}<br>
-        oficial titulado en Educación Física y Deportes</p>
-        <div class="firma-espacio"></div>
-        <p class="firma-nombre">${escapeHtml(cfg.tituladoNombre)}</p>
-      </div>
-      <p class="vobo">Vº Bº,</p>
-      <div class="firma">
-        <p>${escapeHtml(cfg.jefeArticulo)} ${escapeHtml(cfg.jefeEmpleo)}<br>
-        Presidente del tribunal de evaluación de pruebas físicas</p>
-        <div class="firma-espacio"></div>
-        <p class="firma-nombre">${escapeHtml(cfg.jefeNombre)}</p>
+      <div class="firmas-fila">
+        <div class="firma firma-izq">
+          <p class="vobo">Vº Bº,</p>
+          <p>${escapeHtml(cfg.jefeArticulo)} ${escapeHtml(cfg.jefeEmpleo)}<br>
+          Presidente del tribunal de evaluación de pruebas físicas</p>
+          <div class="firma-espacio"></div>
+          <p class="firma-nombre">${escapeHtml(cfg.jefeNombre)}</p>
+        </div>
+        <div class="firma firma-der">
+          <p>${escapeHtml(cfg.tituladoArticulo)} ${escapeHtml(cfg.tituladoEmpleo)}<br>
+          oficial titulado en Educación Física y Deportes</p>
+          <div class="firma-espacio"></div>
+          <p class="firma-nombre">${escapeHtml(cfg.tituladoNombre)}</p>
+        </div>
       </div>
       <p class="destinatarios"><b>DESTINATARIOS:</b><br>Jefe de la UCO<br>Interesado</p>
     </div>`;
@@ -660,14 +685,29 @@ function initLote() {
   document.getElementById('btn-lote-none').addEventListener('click', () => {
     document.querySelectorAll('.lote-check').forEach(c => c.checked = false);
   });
-  document.getElementById('btn-lote-print').addEventListener('click', () => {
+  document.getElementById('btn-lote-print').addEventListener('click', async () => {
     const nombres = Array.from(document.querySelectorAll('.lote-check:checked')).map(c => c.dataset.nombre);
     if (nombres.length === 0) { alert('Seleccione al menos un participante.'); return; }
     const items = nombres.map(n => {
       const row = state.acta.participantes.find(p => p.nombre === n);
       return { row, html: construirInformeHtml(row) };
     });
-    generarInformesPdfConUI(document.getElementById('btn-lote-print'), items);
+    const btn = document.getElementById('btn-lote-print');
+    const textoOriginal = btn.textContent;
+    btn.disabled = true;
+    try {
+      const resultado = await PdfExport.generarInformesLote(items, state.acta.fecha, (actual, total, row, fase) => {
+        btn.textContent = fase === 'zip' ? 'Empaquetando ZIP…' : `Generando ${actual}/${total}…`;
+      });
+      const errores = resultado.fail ? ` (${resultado.fail} con error, revise la consola)` : '';
+      alert(`${resultado.ok} de ${items.length} informe(s) empaquetados y descargados en un ZIP${errores}.`);
+    } catch (e) {
+      console.error(e);
+      alert('No se pudo generar el ZIP: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = textoOriginal;
+    }
   });
 }
 
@@ -675,9 +715,9 @@ function initLote() {
 /* ESTADÍSTICA                                                              */
 /* ---------------------------------------------------------------------- */
 const GRUPOS_RANGO = {
-  OFICIALES: ['Coronel', 'Teniente coronel', 'Comandante', 'Capitán', 'Teniente'],
-  SUBOFICIALES: ['Suboficial Mayor', 'Subteniente', 'Brigada', 'Sargento 1º', 'Sargento'],
-  TROPA: ['Cabo Mayor', 'Cabo 1º', 'Cabo', 'Soldado']
+  OFICIALES: ['Cor.', 'Tcol.', 'Cte.', 'Cap.', 'Tte.'],
+  SUBOFICIALES: ['Sbmy.', 'Sbte.', 'Brig.', 'Sgto 1º', 'Sgto.'],
+  TROPA: ['Cbo My.', 'Cbo 1º', 'Cbo.', 'Sdo.']
 };
 
 function renderEstadistica() {

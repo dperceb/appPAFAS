@@ -211,7 +211,7 @@ legend { font-weight: 700; color: var(--blue-dark); padding: 0 0.4rem; }
 .table-wrap-wide { max-width: 100%; }
 
 .data-table { border-collapse: collapse; width: 100%; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
-.data-table th, .data-table td { border: 1px solid var(--border); padding: 0.4rem 0.45rem; text-align: center; }
+.data-table th, .data-table td { border: 1px solid var(--border); padding: 0.4rem 0.2rem; text-align: center; }
 .data-table thead th {
   background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%);
   color: #fff;
@@ -228,13 +228,17 @@ legend { font-weight: 700; color: var(--blue-dark); padding: 0 0.4rem; }
   font-family: inherit; color: var(--text); border-radius: 4px;
 }
 .data-table input:focus, .data-table select:focus { background: #fff8dc; outline: 2px solid var(--accent); outline-offset: -1px; }
+/* Oculta las flechas de incremento/decremento de los campos numéricos. */
+.data-table input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.data-table input[type="number"]::-webkit-outer-spin-button,
+.data-table input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .data-table td.readonly { background: #eef2f5; color: var(--blue-dark); font-weight: 600; }
-.acta-table input[type="date"] { min-width: 5.5rem; }
 .acta-table input[type="text"]:not([data-field="resMarca"]) { min-width: 5.5rem; }
-.acta-table td.nombre input { min-width: 10rem; text-align: left; }
+.acta-table td.nombre input[type="text"] { min-width: 15rem; text-align: left; }
 .acta-table td.destino input { min-width: 6rem; text-align: left; }
 .acta-table .sel-empleo { min-width: 9.5rem; }
 .acta-table .sel-incidencia { min-width: 8rem; }
+.acta-table input.input-error { outline: 2px solid var(--danger); background: var(--danger-bg); }
 
 /* Columnas Marca/Ptos de las 4 pruebas (Abdominales, Flexiones, Circuito A-V,
    2000 m): mismo ancho entre sí, alineadas en cuadrícula. */
@@ -278,34 +282,41 @@ legend { font-weight: 700; color: var(--blue-dark); padding: 0 0.4rem; }
 .informe-preview {
   background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
   padding: 2rem; max-width: 820px; margin-top: 1.25rem;
-  font-size: 0.95rem; color: #1f2933;
+  font-size: 0.95rem; color: #000; font-family: Arial, sans-serif;
 }
+.informe-preview * { color: #000; border-color: #000; }
 .informe-preview .membrete { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.75rem; }
 .informe-preview .membrete-logo { height: 55px; width: auto; }
 .informe-preview .membrete-caja {
-  border: 1px solid #333; padding: 0.3rem 0.6rem; text-align: center; font-size: 0.75rem; line-height: 1.4; min-width: 150px;
+  border: 1px solid #000; padding: 0.3rem 0.6rem; text-align: center; font-size: 0.75rem; line-height: 1.4; min-width: 150px;
 }
 .informe-preview .membrete-caja b { display: block; font-size: 0.75rem; }
 .informe-preview h2 { text-align: center; font-size: 1.15rem; margin: 1.2rem 0 1rem; text-decoration: underline; }
 .informe-preview .campo { margin: 0.4rem 0; }
 .informe-preview .campo b { display: inline-block; min-width: 260px; }
-.informe-preview .campo-caja { display: flex; justify-content: center; align-items: center; gap: 0.6rem; margin: 0.9rem 0; }
-.informe-preview .campo-caja span { font-weight: 700; }
-.informe-preview .campo-caja .caja { border: 1px solid #333; padding: 0.25rem 1.75rem; min-width: 90px; text-align: center; font-weight: 400; }
-.informe-preview table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-.informe-preview table th, .informe-preview table td { border: 1px solid #999; padding: 0.4rem; }
+.informe-preview .campo-caja { display: flex; justify-content: flex-end; align-items: center; gap: 0.6rem; margin: 0.9rem 0; }
+.informe-preview .campo-caja span { font-weight: 700; white-space: nowrap; }
+.informe-preview .campo-caja .caja { border: 1px solid #000; padding: 0.25rem 0.5rem; width: 35%; box-sizing: border-box; text-align: center; font-weight: 400; }
+.informe-preview table { width: 100%; border-collapse: collapse; margin: 1rem 0; table-layout: fixed; }
+.informe-preview table col.col-prueba { width: 65%; }
+.informe-preview table col.col-marca, .informe-preview table col.col-puntos { width: 17.5%; }
+.informe-preview table th, .informe-preview table td { border: 1px solid #000; padding: 0.4rem; }
 .informe-preview table th { background: #f0f0f0; text-align: center; font-weight: 700; }
 .informe-preview table td:first-child { text-align: left; }
 .informe-preview table td:not(:first-child) { text-align: center; }
 .informe-preview .total-puntos { display: flex; justify-content: flex-end; margin: -0.5rem 0 1.25rem; }
-.informe-preview .total-puntos span, .informe-preview .total-puntos b { border: 1px solid #333; padding: 0.3rem 0.9rem; font-weight: 700; }
+.informe-preview .total-puntos span, .informe-preview .total-puntos b {
+  border: 1px solid #000; padding: 0.3rem 0.4rem; font-weight: 700; font-size: 0.85em; text-align: center;
+  box-sizing: border-box; width: 17.5%; white-space: nowrap;
+}
 .informe-preview .total-puntos span { background: #f0f0f0; border-right: none; }
 .informe-preview .informe-fecha { text-align: center; margin: 1.5rem 0 1rem; }
-.informe-preview .firma { margin-top: 1rem; text-align: center; }
+.informe-preview .firmas-fila { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-top: 1rem; }
+.informe-preview .firma { flex: 1; text-align: center; }
 .informe-preview .firma p { margin: 0; }
 .informe-preview .firma-espacio { height: 3.4rem; }
 .informe-preview .firma-nombre { font-weight: 400; }
-.informe-preview .vobo { text-align: center; margin: 1.5rem 0 0; }
+.informe-preview .vobo { margin: 0 0 0.3rem; }
 .informe-preview .destinatarios { margin-top: 2rem; }
 
 .lote-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.6rem; }
